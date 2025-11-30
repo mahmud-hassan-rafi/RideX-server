@@ -1,6 +1,11 @@
 import express from "express";
 import cors from "cors";
+import connectToDB from "./db/db.js";
+import dotenv from "dotenv";
+dotenv.config();
+
 const app = express();
+connectToDB();
 
 const corsOptions = {
   origin: "*",
@@ -11,7 +16,7 @@ app.use(cors(corsOptions));
 
 // routes
 app.get("/", (req, res) => {
-  res.send("Hello, World!");
+  res.send("Hello, World! It's working.");
 });
 
 export default app;
