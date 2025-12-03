@@ -126,8 +126,3 @@ Cookie example (client in browser): the app sets `token` as `httpOnly` cookie on
 - `backend/src/models/Blacklist.model.js` — blacklist schema with TTL
 - `backend/src/models/user.models.js` — user schema, password hash helpers, token generation
 - `backend/src/controllers/user.controller.js` — register, login, logout handlers
-
-If you'd like, I can also:
-
-- Add a minimal `curl` or Postman collection for testing the auth flows ✅
-- Harden cookie settings and update CORS to safer defaults for production ✅
