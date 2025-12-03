@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectToDB from "./config/db.js";
+import userRouter from "./routes/user.routes.js";
 dotenv.config();
 
 const app = express();
@@ -13,10 +14,14 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // routes
 app.get("/", (req, res) => {
   res.send("Hello, World! It's working.");
 });
+
+app.use("/api/users", userRouter);
 
 export default app;
