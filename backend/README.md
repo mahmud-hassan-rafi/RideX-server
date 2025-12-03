@@ -71,33 +71,217 @@ NODE_ENV=development
 
 **API Endpoints (Auth)** 🌐
 
-- **POST** `/api/users/register`
+#### 1. Register User
 
-  - Body: `{ "firstname", "lastname", "email", "password" }`
-  - Response (201): `{ token, user }`
-  - Notes: Password is hashed server-side.
+**POST** `/api/users/register`
 
-- **POST** `/api/users/login`
+**Request:**
 
-  - Body: `{ "email", "password" }`
-  - Response (200): `{ isPasswordMatched: true, token, user }` and sets `httpOnly` cookie `token`.
-
-- **GET** `/api/users/profile`
-
-  - Protected; requires cookie `token` or header `Authorization: Bearer <token>`.
-  - Response (200): profile payload or message.
-
-- **GET** `/api/users/logout`
-  - Clears cookie on the server and creates a blacklist entry for the token. Response (200): `{ message: "Logout done" }`.
-
-Example: using `Authorization` header
-
-```http
-GET /api/users/profile
-Authorization: Bearer <token>
+```json
+{
+  "firstname": "John",
+  "lastname": "Doe",
+  "email": "john@example.com",
+  "password": "securePassword123"
+}
 ```
 
-Cookie example (client in browser): the app sets `token` as `httpOnly` cookie on login.
+**Success Response (201):**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "_id": "65a1b2c3d4e5f6g7h8i9j0k1",
+    "fullname": {
+      "firstname": "John",
+      "lastname": "Doe"
+    },
+    "email": "john@example.com",
+    "socketID": null,
+    "__v": 0
+  }
+}
+```
+
+**Error Response (400):**
+
+```json
+{
+  "errors": [
+    {
+      "type": "field",
+      "value": "john@",
+      "msg": "Invalid email address",
+      "path": "email",
+      "location": "body"
+    },
+    {
+      "type": "field",
+      "value": "123",
+      "msg": "Firstname must be at least 3 characters",
+      "path": "firstname",
+      "location": "body"
+    }
+  ]
+}
+```
+
+---
+
+#### 2. Login User
+
+**POST** `/api/users/login`
+
+**Request:**
+
+```json
+{
+  "email": "john@example.com",
+  "password": "securePassword123"
+}
+```
+
+**Success Response (200):**
+
+```json
+{
+  "isPasswordMatched": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "_id": "65a1b2c3d4e5f6g7h8i9j0k1",
+    "fullname": {
+      "firstname": "John",
+      "lastname": "Doe"
+    },
+    "email": "john@example.com",
+    "socketID": null
+  }
+}
+```
+
+**Also sets httpOnly cookie:**
+
+```
+Set-Cookie: token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Max-Age=604800; Path=/
+```
+
+**Error Response (401):**
+
+```json
+{
+  "message": "Invalid email or password"
+}
+```
+
+---
+
+#### 3. Get User Profile
+
+**GET** `/api/users/profile`
+
+**Headers (choose one):**
+
+Option A - Cookie:
+
+```http
+Cookie: token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+Option B - Authorization Header:
+
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Success Response (200):**
+
+```json
+{
+  "message": "welcome to the profile"
+}
+```
+
+**Error Response (401):**
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+_(returned if token is missing, invalid, or blacklisted)_
+
+---
+
+#### 4. Logout User
+
+**GET** `/api/users/logout`
+
+**Headers:**
+
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+OR cookie (set during login)
+
+**Success Response (200):**
+
+```json
+{
+  "message": "Logout done"
+}
+```
+
+**Also clears httpOnly cookie:**
+
+```
+Set-Cookie: token=; HttpOnly; Max-Age=0; Path=/
+```
+
+_Token is added to the blacklist collection and will be rejected for 7 days (TTL expiry)._
+
+---
+
+**Quick Test Commands (cURL):**
+
+Register:
+
+```bash
+curl -X POST http://localhost:5000/api/users/register \
+  -H "Content-Type: application/json" \
+  -d '{"firstname":"John","lastname":"Doe","email":"john@example.com","password":"securePassword123"}'
+```
+
+Login:
+
+```bash
+curl -X POST http://localhost:5000/api/users/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"securePassword123"}'
+```
+
+Get Profile (with Authorization header):
+
+```bash
+curl -X GET http://localhost:5000/api/users/profile \
+  -H "Authorization: Bearer <your-token-here>"
+```
+
+Get Profile (with cookie):
+
+```bash
+curl -X GET http://localhost:5000/api/users/profile \
+  -H "Cookie: token=<your-token-here>"
+```
+
+Logout:
+
+```bash
+curl -X GET http://localhost:5000/api/users/logout \
+  -H "Authorization: Bearer <your-token-here>"
+```
 
 **Security Best Practices** 🔒
 
