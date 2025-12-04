@@ -1,79 +1,138 @@
 # Live Location Taxi App 🚕
 
-**Project Overview**
+A professional MERN (MongoDB, Express, React, Node) backend for a real-time taxi booking platform with dual authentication systems for both users and captains (drivers).
 
-This project is a MERN (MongoDB, Express, React, Node) backend for a live-location taxi application. It focuses on secure user authentication using JWTs, supporting both cookie and Authorization header authentication, password hashing with bcrypt, and a token blacklist for logout handling.
+## 📋 Table of Contents
 
-**Key Features**
+- [Project Overview](#project-overview)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Quick Start](#quick-start)
+- [Environment Setup](#environment-setup)
+- [API Documentation](#api-documentation)
+  - [User Authentication](#user-authentication)
+  - [Captain Authentication](#captain-authentication)
+- [Security](#security)
+- [Project Structure](#project-structure)
+- [Troubleshooting](#troubleshooting)
+- [Future Roadmap](#future-roadmap)
 
-- User Authentication with JWT ✅
-- Secure Register / Login flows ✅
-- Password hashing using `bcrypt` ✅
-- Token Blacklist system for logout ✅
-- Token expiration using MongoDB TTL indexes ✅
-- Protected routes via middleware ✅
-- Supports `Cookie` and `Authorization` header ✅
+## Project Overview
 
-**Tech Stack**
+This backend handles secure user and captain authentication with JWT tokens, password hashing via bcrypt, and token blacklist management using MongoDB TTL indexes. It supports both cookie-based and Authorization header authentication for maximum flexibility across web and mobile clients.
 
-- **Node.js** + **Express** (backend)
-- **MongoDB** (database, TTL index for blacklist)
-- **Mongoose** (ODM)
-- **bcrypt** (password hashing)
-- **jsonwebtoken (JWT)** (token issuance & verification)
-- **cookie-parser**, **express-validator** and other middleware
+## Key Features
 
-**API Authentication Flow** 🔐
+✅ Dual authentication system (Users & Captains)  
+✅ JWT-based secure authentication with 7-day expiration  
+✅ Password hashing with bcrypt (10-round salt)  
+✅ Token blacklist system for immediate logout invalidation  
+✅ MongoDB TTL index for automatic blacklist cleanup  
+✅ Protected routes with role-based middleware  
+✅ Cookie and Authorization header support  
+✅ Comprehensive input validation with express-validator  
+✅ Duplicate detection (email & vehicle plate)  
+✅ Structured error handling  
 
-1. Register: client sends `email`, `password`, `firstname`, `lastname` to `/api/users/register`.
-   - Password is hashed with `bcrypt` before storing.
-2. Login: client sends `email` + `password` to `/api/users/login`.
-   - On success the server issues a JWT (expires in 7 days) and sets it as an `httpOnly` cookie (`token`). The token is also returned in the JSON response so clients using mobile apps or SPAs can store it in memory and send it in the `Authorization: Bearer <token>` header.
-3. Protected routes (e.g. `/api/users/profile`) require the JWT. The `isAuthenticated` middleware checks:
-   - `req.cookies.token` or `Authorization` header (`Bearer <token>`)
-   - If token is in the blacklist, requests are rejected (logout invalidation)
-   - Otherwise token is verified with `JWT_SECRET` and request proceeds
+## Tech Stack
 
-**Logout with Blacklist (TTL explained)** 🔁
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| Runtime | Node.js v16+ | JavaScript runtime |
+| Framework | Express.js | Web framework |
+| Database | MongoDB | NoSQL database |
+| ODM | Mongoose | Database modeling |
+| Authentication | JWT | Token-based auth |
+| Password Security | bcrypt | Password hashing |
+| Validation | express-validator | Input validation |
+| Cookies | cookie-parser | Cookie handling |
 
-- When a user logs out, the backend clears the cookie and stores the token in a `Blacklist` collection.
-- The `Blacklist` model includes a `createdAt` field with a TTL index (`expires: 7 * 86400`) so entries automatically expire after 7 days. This means blacklist entries are retained only while the token could still be valid — allowing the server to reject blacklisted tokens until they would have naturally expired.
+## Quick Start
 
-**Setup & Installation** 🛠️
+### Prerequisites
 
-Prerequisites:
+- Node.js (v16 or higher)
+- npm or yarn package manager
+- MongoDB (Atlas cloud or local instance)
+- Git
 
-- Node.js (v16+ recommended)
-- npm or yarn
-- A MongoDB instance (Atlas or local)
-
-Quick start (backend):
+### Installation
 
 ```bash
-# from project root
+# Clone and navigate to backend
 cd backend
+
+# Install dependencies
 npm install
 
-# create a .env file (see below)
-npm run dev   # or `npm start` depending on scripts in `backend/package.json`
+# Create environment file
+cp .env.example .env
+
+# Start development server
+npm run dev
 ```
 
-**Environment Variables** (.env)
+Server will run on `http://localhost:5000` by default.
 
-Create a `backend/.env` file with the following values:
+## Environment Setup
 
-```
-MONGO_URI=mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/your-db
-JWT_SECRET=yourVeryStrongSecretHere
+### .env Configuration
+
+Create a `.env` file in the `backend/` directory:
+
+```env
+# Database
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/taxi-app
+
+# JWT Secret (use a long, random string)
+JWT_SECRET=your_very_secure_random_secret_key_here_min_32_characters
+
+# Server
 PORT=5000
 NODE_ENV=development
 ```
 
-**API Endpoints (Auth)** 🌐
+**Important**: Keep `JWT_SECRET` secure and rotate in production.
 
-#### 1. Register User
+## API Authentication Flow 🔐
 
-**POST** `/api/users/register`
+### Standard Flow
+
+```
+1. REGISTER → Validate → Hash Password → Store User → Issue JWT → Return Token
+   ↓
+2. LOGIN → Validate Credentials → Compare Password → Issue JWT → Set Cookie + Return Token
+   ↓
+3. PROTECTED ROUTES → Check Token (Cookie/Header) → Verify JWT → Check Blacklist → Allow Access
+   ↓
+4. LOGOUT → Clear Cookie → Add Token to Blacklist → Automatic Expiry (7 days)
+```
+
+### Token & Blacklist Lifecycle
+
+- **Token Lifespan**: 7 days (604800 seconds)
+- **Blacklist Mechanism**: Token stored with TTL index set to 7 days
+- **Automatic Cleanup**: MongoDB automatically removes expired tokens
+- **Purpose**: Immediate logout invalidation + automatic DB cleanup
+
+## API Documentation
+
+### HTTP Status Codes Reference
+
+| Code | Meaning | Common Cause |
+|------|---------|-------------|
+| 200 | OK | Successful request |
+| 201 | Created | Resource created successfully |
+| 400 | Bad Request | Validation failed or duplicate entry |
+| 401 | Unauthorized | Missing, invalid, or blacklisted token |
+| 409 | Conflict | Resource already exists |
+| 500 | Server Error | Unexpected server error |
+
+---
+
+## User Authentication 👤
+
+### Register User - POST `/api/users/register`
 
 **Request:**
 
@@ -115,13 +174,6 @@ NODE_ENV=development
       "msg": "Invalid email address",
       "path": "email",
       "location": "body"
-    },
-    {
-      "type": "field",
-      "value": "123",
-      "msg": "Firstname must be at least 3 characters",
-      "path": "firstname",
-      "location": "body"
     }
   ]
 }
@@ -129,9 +181,7 @@ NODE_ENV=development
 
 ---
 
-#### 2. Login User
-
-**POST** `/api/users/login`
+### Login User - POST `/api/users/login`
 
 **Request:**
 
@@ -160,7 +210,7 @@ NODE_ENV=development
 }
 ```
 
-**Also sets httpOnly cookie:**
+**Headers:**
 
 ```
 Set-Cookie: token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Max-Age=604800; Path=/
@@ -176,19 +226,15 @@ Set-Cookie: token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Max-Age=604
 
 ---
 
-#### 3. Get User Profile
+### Get User Profile - GET `/api/users/profile`
 
-**GET** `/api/users/profile`
-
-**Headers (choose one):**
-
-Option A - Cookie:
+**Authentication (choose one):**
 
 ```http
 Cookie: token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-Option B - Authorization Header:
+OR
 
 ```http
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -210,21 +256,15 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-_(returned if token is missing, invalid, or blacklisted)_
-
 ---
 
-#### 4. Logout User
+### Logout User - GET `/api/users/logout`
 
-**GET** `/api/users/logout`
-
-**Headers:**
+**Authentication:**
 
 ```http
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
-
-OR cookie (set during login)
 
 **Success Response (200):**
 
@@ -234,19 +274,17 @@ OR cookie (set during login)
 }
 ```
 
-**Also clears httpOnly cookie:**
+**Headers:**
 
 ```
 Set-Cookie: token=; HttpOnly; Max-Age=0; Path=/
 ```
 
-_Token is added to the blacklist collection and will be rejected for 7 days (TTL expiry)._
-
 ---
 
-**Quick Test Commands (cURL):**
+### cURL Examples (Users)
 
-Register:
+**Register:**
 
 ```bash
 curl -X POST http://localhost:5000/api/users/register \
@@ -254,7 +292,7 @@ curl -X POST http://localhost:5000/api/users/register \
   -d '{"firstname":"John","lastname":"Doe","email":"john@example.com","password":"securePassword123"}'
 ```
 
-Login:
+**Login:**
 
 ```bash
 curl -X POST http://localhost:5000/api/users/login \
@@ -262,21 +300,14 @@ curl -X POST http://localhost:5000/api/users/login \
   -d '{"email":"john@example.com","password":"securePassword123"}'
 ```
 
-Get Profile (with Authorization header):
+**Get Profile:**
 
 ```bash
 curl -X GET http://localhost:5000/api/users/profile \
   -H "Authorization: Bearer <your-token-here>"
 ```
 
-Get Profile (with cookie):
-
-```bash
-curl -X GET http://localhost:5000/api/users/profile \
-  -H "Cookie: token=<your-token-here>"
-```
-
-Logout:
+**Logout:**
 
 ```bash
 curl -X GET http://localhost:5000/api/users/logout \
@@ -287,13 +318,7 @@ curl -X GET http://localhost:5000/api/users/logout \
 
 ## Captain Authentication 🚖
 
-Captains (drivers) have a separate authentication flow with similar JWT-based security but additional vehicle information.
-
-**Captain API Endpoints** 🌐
-
-#### 1. Register Captain
-
-**POST** `/api/captains/register`
+### Register Captain - POST `/api/captains/register`
 
 **Request:**
 
@@ -314,12 +339,12 @@ Captains (drivers) have a separate authentication flow with similar JWT-based se
 }
 ```
 
-**Request Notes:**
+**Validation Rules:**
 
-- `vehicleType` must be one of: `motorcycle`, `car`, `auto`
-- `capacity` must be at least 1
-- `plate` must be unique (no two captains can have the same vehicle plate)
-- All vehicle fields are required
+- `vehicleType`: `motorcycle` | `car` | `auto`
+- `capacity`: Minimum 1
+- `plate`: Unique across all captains
+- All fields required
 
 **Success Response (201):**
 
@@ -339,36 +364,12 @@ Captains (drivers) have a separate authentication flow with similar JWT-based se
       "plate": "S8NXC91",
       "capacity": 5,
       "vehicleType": "car"
-    },
-    "__v": 0
+    }
   }
 }
 ```
 
-**Error Response (400) - Validation Error:**
-
-```json
-{
-  "errors": [
-    {
-      "type": "field",
-      "value": "ab",
-      "msg": "Firstname must be at least 3 characters",
-      "path": "fullname.firstname",
-      "location": "body"
-    },
-    {
-      "type": "field",
-      "value": "red",
-      "msg": "Plate must be at least 3 characters",
-      "path": "vehicle.plate",
-      "location": "body"
-    }
-  ]
-}
-```
-
-**Error Response (400) - Captain Already Exists:**
+**Error Response (400) - Duplicate Email:**
 
 ```json
 {
@@ -388,9 +389,7 @@ Captains (drivers) have a separate authentication flow with similar JWT-based se
 
 ---
 
-#### 2. Login Captain
-
-**POST** `/api/captains/login`
+### Login Captain - POST `/api/captains/login`
 
 **Request:**
 
@@ -425,12 +424,6 @@ Captains (drivers) have a separate authentication flow with similar JWT-based se
 }
 ```
 
-**Also sets httpOnly cookie:**
-
-```
-Set-Cookie: token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Max-Age=604800; Path=/
-```
-
 **Error Response (401):**
 
 ```json
@@ -441,19 +434,15 @@ Set-Cookie: token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Max-Age=604
 
 ---
 
-#### 3. Get Captain Profile
+### Get Captain Profile - GET `/api/captains/profile`
 
-**GET** `/api/captains/profile`
-
-**Headers (choose one):**
-
-Option A - Cookie:
+**Authentication (choose one):**
 
 ```http
 Cookie: token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-Option B - Authorization Header:
+OR
 
 ```http
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -467,29 +456,15 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-**Error Response (401):**
-
-```json
-{
-  "message": "Unauthorized"
-}
-```
-
-_(returned if token is missing, invalid, or blacklisted)_
-
 ---
 
-#### 4. Logout Captain
+### Logout Captain - GET `/api/captains/logout`
 
-**GET** `/api/captains/logout`
-
-**Headers:**
+**Authentication:**
 
 ```http
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
-
-OR cookie (set during login)
 
 **Success Response (200):**
 
@@ -499,19 +474,21 @@ OR cookie (set during login)
 }
 ```
 
-**Also clears httpOnly cookie:**
-
-```
-Set-Cookie: token=; HttpOnly; Max-Age=0; Path=/
-```
-
-_Token is added to the blacklist collection and will be rejected for 7 days (TTL expiry)._
-
 ---
 
-**Quick Test Commands (cURL):**
+### Captain Features
 
-Register Captain:
+| Feature | Details |
+|---------|---------|
+| Status | `available` or `unavailable` (default: unavailable) |
+| Vehicle Info | Color, plate, capacity, type |
+| JWT Payload | `{ _id, email, role: "captain" }` |
+| Plate Uniqueness | Enforced at database level |
+| Blacklist | Same 7-day TTL as users |
+
+### cURL Examples (Captains)
+
+**Register:**
 
 ```bash
 curl -X POST http://localhost:5000/api/captains/register \
@@ -519,7 +496,7 @@ curl -X POST http://localhost:5000/api/captains/register \
   -d '{"fullname":{"firstname":"mahmud","lastname":"hassan"},"email":"mahmud@gmail.com","password":"securePassword123","vehicle":{"color":"red","plate":"S8NXC91","capacity":5,"vehicleType":"car"}}'
 ```
 
-Login Captain:
+**Login:**
 
 ```bash
 curl -X POST http://localhost:5000/api/captains/login \
@@ -527,61 +504,139 @@ curl -X POST http://localhost:5000/api/captains/login \
   -d '{"email":"mahmud@gmail.com","password":"securePassword123"}'
 ```
 
-Get Captain Profile (with Authorization header):
+**Get Profile:**
 
 ```bash
 curl -X GET http://localhost:5000/api/captains/profile \
-  -H "Authorization: Bearer <your-token-here>"
-```
-
-Get Captain Profile (with cookie):
-
-```bash
-curl -X GET http://localhost:5000/api/captains/profile \
-  -H "Cookie: token=<your-token-here>"
-```
-
-Logout Captain:
-
-```bash
-curl -X GET http://localhost:5000/api/captains/logout \
   -H "Authorization: Bearer <your-token-here>"
 ```
 
 ---
 
-**Captain Features:**
+## Security 🔒
 
-- Status tracking: `available` or `unavailable` (default: `unavailable`)
-- Vehicle information: color, plate, capacity, type (motorcycle/car/auto)
-- JWT token includes role identifier: `{ _id, email, role: "captain" }`
-- Unique plate enforcement to prevent duplicate vehicle registrations
-- Same blacklist system as users for logout invalidation
+### Best Practices Implemented
 
-**Security Best Practices** 🔒
+✅ **HTTPS Only** - Set `secure: true` on cookies in production  
+✅ **httpOnly Cookies** - Prevents XSS token theft  
+✅ **Password Hashing** - bcrypt with 10-round salt  
+✅ **JWT Expiration** - 7-day token lifespan  
+✅ **Input Validation** - express-validator on all inputs  
+✅ **Token Blacklist** - TTL-based automatic cleanup  
+✅ **Unique Constraints** - Email and plate uniqueness  
+✅ **Role-Based Access** - JWT includes role identifier  
 
-- Use HTTPS in production and set the cookie `secure: true`.
-- Keep `JWT_SECRET` long and random; rotate if compromised.
-- Use `httpOnly` cookies to reduce XSS exposure for stored tokens.
-- Use short-lived access tokens and (optionally) rotate refresh tokens.
-- Validate and sanitize all incoming data (`express-validator` used for examples).
-- Rate limit authentication endpoints to mitigate brute force attacks.
-- Use tools like `helmet` to set secure HTTP headers.
-- Limit CORS to trusted origins in production (avoid `origin: '*'`).
-- Store blacklist in an in-memory store (Redis) if you need faster lookups and multi-instance scaling.
+### Recommended Improvements for Production
 
-**Future Improvements / Roadmap** 🚀
+🔧 Rate limiting on auth endpoints (prevent brute force)  
+🔧 Helmet.js for secure HTTP headers  
+🔧 CORS restricted to trusted origins only  
+🔧 Refresh token rotation mechanism  
+🔧 Email verification flow  
+🔧 Password reset via email  
+🔧 Redis for faster blacklist lookups (multi-instance)  
+🔧 Activity logging and monitoring  
+🔧 Two-factor authentication (2FA)  
 
-- Add refresh tokens with secure storage and rotation.
-- Email verification and password reset flows.
-- Role-based access control (RBAC) or permissions.
-- Move blacklist to Redis for better performance and multi-server support.
-- Add logging, monitoring, and structured error handling.
-- Add end-to-end tests and CI configuration.
+## Project Structure
 
-**Files of interest**
+```
+backend/
+├── src/
+│   ├── config/
+│   │   └── db.js                 # MongoDB connection
+│   ├── controllers/
+│   │   ├── user.controller.js    # User auth handlers
+│   │   └── captain.controller.js # Captain auth handlers
+│   ├── middlewares/
+│   │   └── Auth.middleware.js    # JWT verification & blacklist check
+│   ├── models/
+│   │   ├── user.models.js        # User schema with JWT methods
+│   │   ├── captain.models.js     # Captain schema with vehicle info
+│   │   └── Blacklist.model.js    # Token blacklist with TTL
+│   ├── routes/
+│   │   ├── user.routes.js        # User endpoints
+│   │   └── captain.routes.js     # Captain endpoints
+│   ├── services/
+│   │   ├── user.service.js       # User creation logic
+│   │   └── captain.service.js    # Captain creation logic
+│   ├── app.js                     # Express app configuration
+│   └── server.js                  # Server entry point
+├── .env                            # Environment variables
+├── package.json                    # Dependencies
+└── README.md                        # Documentation
+```
 
-- `backend/src/middlewares/Auth.middleware.js` — token extraction & verification + blacklist check
-- `backend/src/models/Blacklist.model.js` — blacklist schema with TTL
-- `backend/src/models/user.models.js` — user schema, password hash helpers, token generation
-- `backend/src/controllers/user.controller.js` — register, login, logout handlers
+### Key Files Reference
+
+| File | Purpose |
+|------|---------|
+| `Auth.middleware.js` | Token extraction, JWT verification, blacklist validation |
+| `Blacklist.model.js` | TTL schema for token invalidation |
+| `user.models.js` | User schema with `generateAuthToken()`, `comparePassword()` |
+| `captain.models.js` | Captain schema with vehicle info & authentication methods |
+| `user.controller.js` | Register, login, profile, logout endpoints for users |
+| `captain.controller.js` | Register, login, profile, logout endpoints for captains |
+
+## Troubleshooting
+
+### Issue: "All fields are required"
+
+**Cause**: Missing or mismatched request body structure  
+**Solution**: Verify request JSON matches the documented structure exactly
+
+### Issue: "Invalid email or password" on login
+
+**Cause**: Either email doesn't exist or password is incorrect  
+**Debug**:
+- Check if user/captain was registered with exact email
+- Ensure password is sent as plain text (hashing happens server-side)
+
+### Issue: "Unauthorized" on protected routes
+
+**Causes**:
+1. Token is missing from cookie or Authorization header
+2. Token is invalid or expired
+3. Token has been blacklisted (logged out)
+
+**Solution**: Re-login to get fresh token
+
+### Issue: "plate already exists" or "email already exists"
+
+**Cause**: Attempting to register with duplicate email or vehicle plate  
+**Solution**: Use a unique value or delete the existing record from MongoDB
+
+## Future Roadmap 🚀
+
+**Phase 1 (Next):**
+- [ ] Refresh token system with rotation
+- [ ] Rate limiting on authentication endpoints
+- [ ] Email verification workflow
+- [ ] Password reset via email link
+
+**Phase 2:**
+- [ ] Role-based access control (RBAC)
+- [ ] Redis integration for blacklist optimization
+- [ ] Real-time location tracking with WebSockets
+- [ ] Trip history and ratings system
+
+**Phase 3:**
+- [ ] Two-factor authentication (2FA)
+- [ ] Payment gateway integration
+- [ ] Admin dashboard and analytics
+- [ ] Push notifications
+
+---
+
+## Contributing
+
+When adding new features:
+1. Follow existing code structure and naming conventions
+2. Add appropriate validation using express-validator
+3. Update this README with new endpoints
+4. Test with both Postman and cURL
+5. Ensure proper error handling
+
+## License
+
+MIT License - See LICENSE file for details
