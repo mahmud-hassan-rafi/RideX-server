@@ -10,22 +10,27 @@ export const registerUser = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
   console.log(req.body);
-  const { firstname, lastname, email, password } = req.body;
+  const { fullname, email, password } = req.body;
+  const isUserExists = await userModel.findOne({ email });
+  if (isUserExists) {
+    return res.status(400).json({ message: "user already exists" });
+  }
+
   const hashedPassword = await userModel.hashPassword(password);
 
   const user = await createUser({
-    firstname,
-    lastname,
+    fullname,
     email,
     password: hashedPassword,
   });
   const token = user.generateAuthToken();
 
-  return res.status(201).json({ token, user });
+  return res.status(201).json({ message: "User registered successfully" });
 };
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
+
   const user = await userModel.findOne({ email }).select("+password");
 
   if (!user) {
@@ -41,7 +46,7 @@ export const loginUser = async (req, res) => {
       httpOnly: true,
       maxAge: 1000 * 86400 * 7,
     });
-    return res.status(200).json({ isPasswordMatched, token, user });
+    return res.status(200).json({ message: "Login successful" });
   }
 };
 

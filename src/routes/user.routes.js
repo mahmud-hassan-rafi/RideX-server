@@ -19,7 +19,7 @@ router.post(
     body("password")
       .isLength({ min: 6 })
       .withMessage("Password must be at least 6 characters long"),
-    body("firstname")
+    body("fullname.firstname")
       .isLength({ min: 3 })
       .withMessage("Firstname must be at least 3 characters"),
   ],

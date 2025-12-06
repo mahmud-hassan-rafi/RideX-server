@@ -32,20 +32,20 @@ This backend handles secure user and captain authentication with JWT tokens, pas
 ✅ Cookie and Authorization header support  
 ✅ Comprehensive input validation with express-validator  
 ✅ Duplicate detection (email & vehicle plate)  
-✅ Structured error handling  
+✅ Structured error handling
 
 ## Tech Stack
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| Runtime | Node.js v16+ | JavaScript runtime |
-| Framework | Express.js | Web framework |
-| Database | MongoDB | NoSQL database |
-| ODM | Mongoose | Database modeling |
-| Authentication | JWT | Token-based auth |
-| Password Security | bcrypt | Password hashing |
-| Validation | express-validator | Input validation |
-| Cookies | cookie-parser | Cookie handling |
+| Component         | Technology        | Purpose            |
+| ----------------- | ----------------- | ------------------ |
+| Runtime           | Node.js v16+      | JavaScript runtime |
+| Framework         | Express.js        | Web framework      |
+| Database          | MongoDB           | NoSQL database     |
+| ODM               | Mongoose          | Database modeling  |
+| Authentication    | JWT               | Token-based auth   |
+| Password Security | bcrypt            | Password hashing   |
+| Validation        | express-validator | Input validation   |
+| Cookies           | cookie-parser     | Cookie handling    |
 
 ## Quick Start
 
@@ -119,14 +119,14 @@ NODE_ENV=development
 
 ### HTTP Status Codes Reference
 
-| Code | Meaning | Common Cause |
-|------|---------|-------------|
-| 200 | OK | Successful request |
-| 201 | Created | Resource created successfully |
-| 400 | Bad Request | Validation failed or duplicate entry |
-| 401 | Unauthorized | Missing, invalid, or blacklisted token |
-| 409 | Conflict | Resource already exists |
-| 500 | Server Error | Unexpected server error |
+| Code | Meaning      | Common Cause                           |
+| ---- | ------------ | -------------------------------------- |
+| 200  | OK           | Successful request                     |
+| 201  | Created      | Resource created successfully          |
+| 400  | Bad Request  | Validation failed or duplicate entry   |
+| 401  | Unauthorized | Missing, invalid, or blacklisted token |
+| 409  | Conflict     | Resource already exists                |
+| 500  | Server Error | Unexpected server error                |
 
 ---
 
@@ -138,8 +138,10 @@ NODE_ENV=development
 
 ```json
 {
-  "firstname": "John",
-  "lastname": "Doe",
+  "fullname": {
+    "firstname": "John",
+    "lastname": "Doe"
+  },
   "email": "john@example.com",
   "password": "securePassword123"
 }
@@ -478,13 +480,13 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### Captain Features
 
-| Feature | Details |
-|---------|---------|
-| Status | `available` or `unavailable` (default: unavailable) |
-| Vehicle Info | Color, plate, capacity, type |
-| JWT Payload | `{ _id, email, role: "captain" }` |
-| Plate Uniqueness | Enforced at database level |
-| Blacklist | Same 7-day TTL as users |
+| Feature          | Details                                             |
+| ---------------- | --------------------------------------------------- |
+| Status           | `available` or `unavailable` (default: unavailable) |
+| Vehicle Info     | Color, plate, capacity, type                        |
+| JWT Payload      | `{ _id, email, role: "captain" }`                   |
+| Plate Uniqueness | Enforced at database level                          |
+| Blacklist        | Same 7-day TTL as users                             |
 
 ### cURL Examples (Captains)
 
@@ -524,7 +526,7 @@ curl -X GET http://localhost:5000/api/captains/profile \
 ✅ **Input Validation** - express-validator on all inputs  
 ✅ **Token Blacklist** - TTL-based automatic cleanup  
 ✅ **Unique Constraints** - Email and plate uniqueness  
-✅ **Role-Based Access** - JWT includes role identifier  
+✅ **Role-Based Access** - JWT includes role identifier
 
 ### Recommended Improvements for Production
 
@@ -536,7 +538,7 @@ curl -X GET http://localhost:5000/api/captains/profile \
 🔧 Password reset via email  
 🔧 Redis for faster blacklist lookups (multi-instance)  
 🔧 Activity logging and monitoring  
-🔧 Two-factor authentication (2FA)  
+🔧 Two-factor authentication (2FA)
 
 ## Project Structure
 
@@ -569,14 +571,14 @@ backend/
 
 ### Key Files Reference
 
-| File | Purpose |
-|------|---------|
-| `Auth.middleware.js` | Token extraction, JWT verification, blacklist validation |
-| `Blacklist.model.js` | TTL schema for token invalidation |
-| `user.models.js` | User schema with `generateAuthToken()`, `comparePassword()` |
-| `captain.models.js` | Captain schema with vehicle info & authentication methods |
-| `user.controller.js` | Register, login, profile, logout endpoints for users |
-| `captain.controller.js` | Register, login, profile, logout endpoints for captains |
+| File                    | Purpose                                                     |
+| ----------------------- | ----------------------------------------------------------- |
+| `Auth.middleware.js`    | Token extraction, JWT verification, blacklist validation    |
+| `Blacklist.model.js`    | TTL schema for token invalidation                           |
+| `user.models.js`        | User schema with `generateAuthToken()`, `comparePassword()` |
+| `captain.models.js`     | Captain schema with vehicle info & authentication methods   |
+| `user.controller.js`    | Register, login, profile, logout endpoints for users        |
+| `captain.controller.js` | Register, login, profile, logout endpoints for captains     |
 
 ## Troubleshooting
 
@@ -589,12 +591,14 @@ backend/
 
 **Cause**: Either email doesn't exist or password is incorrect  
 **Debug**:
+
 - Check if user/captain was registered with exact email
 - Ensure password is sent as plain text (hashing happens server-side)
 
 ### Issue: "Unauthorized" on protected routes
 
 **Causes**:
+
 1. Token is missing from cookie or Authorization header
 2. Token is invalid or expired
 3. Token has been blacklisted (logged out)
@@ -609,18 +613,21 @@ backend/
 ## Future Roadmap 🚀
 
 **Phase 1 (Next):**
+
 - [ ] Refresh token system with rotation
 - [ ] Rate limiting on authentication endpoints
 - [ ] Email verification workflow
 - [ ] Password reset via email link
 
 **Phase 2:**
+
 - [ ] Role-based access control (RBAC)
 - [ ] Redis integration for blacklist optimization
 - [ ] Real-time location tracking with WebSockets
 - [ ] Trip history and ratings system
 
 **Phase 3:**
+
 - [ ] Two-factor authentication (2FA)
 - [ ] Payment gateway integration
 - [ ] Admin dashboard and analytics
@@ -631,6 +638,7 @@ backend/
 ## Contributing
 
 When adding new features:
+
 1. Follow existing code structure and naming conventions
 2. Add appropriate validation using express-validator
 3. Update this README with new endpoints
