@@ -1,10 +1,10 @@
 import express from "express";
 import { body } from "express-validator";
 import {
-  captainLogout,
-  getCaptainProfile,
-  loginCaptain,
-  registerCaptain,
+  getProfileController,
+  loginController,
+  logoutController,
+  registerController,
 } from "../controllers/captain.controller.js";
 import { isAuthenticated } from "../middlewares/Auth.middleware.js";
 
@@ -20,23 +20,31 @@ router.post(
     body("password")
       .isLength({ min: 6 })
       .withMessage("Password must be at least 6 characters long"),
+    // vehicle color
     body("vehicle.color")
+      .if(body("role").equals("captain"))
       .isLength({ min: 3 })
       .withMessage("Color must be at least 3 characters"),
+    // vehicle plate no.
     body("vehicle.plate")
-      .isLength({ min: 3 })
-      .withMessage("Plate must be at least 3 characters"),
+      .if(body("role").equals("captain"))
+      .isLength({ min: 6 })
+      .withMessage("Plate must be at least 6 characters"),
+    // vehicle capacity
     body("vehicle.capacity")
+      .if(body("role").equals("captain"))
       .isInt({ min: 1 })
       .withMessage("Capacity must be at least 1"),
+    // vehicle types
     body("vehicle.vehicleType")
+      .if(body("role").equals("captain"))
       .isIn(["motorcycle", "car", "auto"])
       .withMessage("Invalid vehicle type"),
   ],
-  registerCaptain
+  registerController
 );
-router.post("/login", loginCaptain);
-router.get("/profile", isAuthenticated, getCaptainProfile);
-router.get("/logout", isAuthenticated, captainLogout);
+router.post("/login", loginController);
+router.get("/me", isAuthenticated, getProfileController);
+router.get("/logout", isAuthenticated, logoutController);
 
 export default router;
