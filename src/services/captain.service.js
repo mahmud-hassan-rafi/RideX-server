@@ -1,16 +1,17 @@
-import Captain from "../models/captain.models.js";
+import Captain from "../models/Users.models.js";
 
 export const createCaptain = async ({
-  firstname,
-  lastname,
+  fullname,
   email,
   password,
+  role = "captain",
   vehicle,
 }) => {
   if (
-    !firstname ||
+    !fullname.firstname ||
     !email ||
     !password ||
+    !role ||
     !vehicle.color ||
     !vehicle.plate ||
     !vehicle.capacity ||
@@ -20,12 +21,11 @@ export const createCaptain = async ({
   } else {
     const hashedPassword = await Captain.hashPassword(password);
     const captain = await Captain.create({
-      fullname: {
-        firstname,
-        lastname,
-      },
+      fullname,
       email,
       password: hashedPassword,
+      role,
+      captainStatus: "available",
       vehicle: {
         color: vehicle.color,
         plate: vehicle.plate,
