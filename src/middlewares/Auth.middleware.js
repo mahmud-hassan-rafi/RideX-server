@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import BlacklistModel from "../models/Blacklist.model.js";
+import User from "../models/Users.models.js";
 
 export const isAuthenticated = async (req, res, next) => {
   const token =
@@ -14,6 +15,10 @@ export const isAuthenticated = async (req, res, next) => {
   }
 
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const isUserExists = await User.findById(decoded._id);
+  if (!isUserExists) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
   req.user = decoded;
   next();
 };
